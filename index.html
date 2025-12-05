@@ -326,22 +326,48 @@ function importExercises() {
     if (!text) { closeImportModal(); return; }
 
     const lines = text.split("\n").map(l => l.trim()).filter(l => l);
+
     lines.forEach(line => {
         const parts = line.split(/\s+/);
         if (!parts.length) return;
 
-        const name = parts[0];
-        const sets = [];
+        let nameParts = [];
+        let tokensStartIndex = 1;
 
+        // Detect where exercise name ends and sets begin
         for (let i = 1; i < parts.length; i++) {
-            const token = parts[i];
+            if (/\d/.test(parts[i])) { 
+                tokensStartIndex = i;
+                break;
+            }
+            nameParts.push(parts[i-1]);
+        }
+
+        const name = nameParts.length ? nameParts.join(" ") : parts[0];
+        const setTokens = parts.slice(tokensStartIndex);
+
+        let sets = [];
+        let persistentWeight = null;
+
+        setTokens.forEach(token => {
+            // Format: Weight# → weight applies to all reps after
+            if (token.includes("#")) {
+                persistentWeight = token.replace("#", "");
+                return;
+            }
+
+            // Format: WeightxReps
             if (token.includes("x")) {
                 const [w, r] = token.split("x");
-                sets.push({ weight: w, reps: r });
-            } else {
-                sets.push({ weight: "", reps: token });
+                sets.push({ weight: w.trim(), reps: r.trim() });
+                return;
             }
-        }
+
+            // Format: reps only
+            if (!isNaN(token)) {
+                sets.push({ weight: persistentWeight ?? "", reps: token });
+            }
+        });
 
         createExerciseBlock(name, "", sets);
     });
@@ -349,6 +375,7 @@ function importExercises() {
     closeImportModal();
     saveData();
 }
+
 
 /* ---------------- EXPORT FUNCTION ---------------- */
 function generateExportText() {
