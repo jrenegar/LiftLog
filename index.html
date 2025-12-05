@@ -332,11 +332,17 @@ function openExportModal() { document.getElementById("exportText").value = gener
 function closeExportModal() { document.getElementById("exportModalBg").style.display = "none"; }
 function copyExport() { const textarea = document.getElementById("exportText"); textarea.select(); document.execCommand("copy"); alert("Copied to clipboard!"); }
 
+/* TIMERS: timestamp-driven implementation is used further below */
 /* ---------------- TIMERS (Top Bar) ---------------- */
 let countdownInterval = null;
-let countdownRemaining = 0; // seconds
+let countdownDuration = 0; // seconds requested
+let countdownEndTime = null; // timestamp (ms) when countdown should finish
+let countdownPaused = false;
+let countdownPausedRemaining = 0; // seconds remaining when paused
+
 let elapsedInterval = null;
-let elapsedSeconds = 0;
+let elapsedStartTime = null; // timestamp (ms) when elapsed began (taking accumulated into account)
+let elapsedAccumulated = 0; // seconds accumulated before current run
 let elapsedRunning = false;
 
 function pad2(n) { return n.toString().padStart(2, '0'); }
@@ -349,32 +355,83 @@ function formatTimeSeconds(s) {
 }
 
 function updateCountdownDisplay() {
-    document.getElementById('countdownDisplay').textContent = formatTimeSeconds(countdownRemaining);
+    let remainingSec = 0;
+    if (countdownEndTime) {
+        const remMs = countdownEndTime - Date.now();
+        remainingSec = Math.max(0, Math.ceil(remMs / 1000));
+    } else if (countdownPaused) {
+        remainingSec = Math.max(0, Math.ceil(countdownPausedRemaining));
+    }
+    document.getElementById('countdownDisplay').textContent = formatTimeSeconds(remainingSec);
 }
 
 function updateElapsedDisplay() {
-    document.getElementById('elapsedDisplay').textContent = formatTimeSeconds(elapsedSeconds);
+    let elapsedSec = elapsedAccumulated;
+    if (elapsedStartTime) {
+        elapsedSec = Math.floor((Date.now() - elapsedStartTime) / 1000);
+    }
+    document.getElementById('elapsedDisplay').textContent = formatTimeSeconds(elapsedSec);
 }
 
 function startElapsed() {
     if (elapsedRunning) return;
+    // resume from accumulated
+    elapsedStartTime = Date.now() - elapsedAccumulated * 1000;
     elapsedRunning = true;
-    elapsedInterval = setInterval(() => { elapsedSeconds++; updateElapsedDisplay(); }, 1000);
+    // update twice a second for snappy UI
+    if (elapsedInterval) clearInterval(elapsedInterval);
+    elapsedInterval = setInterval(updateElapsedDisplay, 500);
+    updateElapsedDisplay();
+}
+
+function stopElapsed() {
+    if (!elapsedRunning) return;
+    // capture accumulated seconds and stop
+    elapsedAccumulated = Math.floor((Date.now() - elapsedStartTime) / 1000);
+    elapsedStartTime = null;
+    elapsedRunning = false;
+    if (elapsedInterval) { clearInterval(elapsedInterval); elapsedInterval = null; }
+    updateElapsedDisplay();
+}
+
+function resetElapsed() {
+    if (elapsedInterval) { clearInterval(elapsedInterval); elapsedInterval = null; }
+    elapsedStartTime = null;
+    elapsedAccumulated = 0;
+    elapsedRunning = false;
+    updateElapsedDisplay();
 }
 
 function startCountdown(seconds) {
-    // Start elapsed timer on first countdown
+    // If seconds provided, start a fresh countdown; otherwise if paused, resume
+    if (typeof seconds === 'number') {
+        countdownDuration = Math.max(0, Math.floor(seconds));
+        countdownEndTime = Date.now() + countdownDuration * 1000;
+        countdownPaused = false;
+        countdownPausedRemaining = 0;
+    } else if (countdownPaused && countdownPausedRemaining > 0) {
+        countdownEndTime = Date.now() + Math.floor(countdownPausedRemaining) * 1000;
+        countdownPaused = false;
+        countdownPausedRemaining = 0;
+    }
+
+    // Start the elapsed timer when the countdown first starts
     startElapsed();
+
     if (countdownInterval) clearInterval(countdownInterval);
-    countdownRemaining = Math.max(0, Math.floor(seconds));
-    updateCountdownDisplay();
+    // update more frequently so UI is responsive after resuming
     countdownInterval = setInterval(() => {
-        countdownRemaining--;
-        if (countdownRemaining <= 0) {
+        if (!countdownEndTime) return updateCountdownDisplay();
+        const remMs = countdownEndTime - Date.now();
+        if (remMs <= 0) {
+            // finished
             clearInterval(countdownInterval);
             countdownInterval = null;
-            countdownRemaining = 0;
-            // Flash the top bar to indicate countdown finished
+            countdownEndTime = null;
+            countdownPaused = false;
+            countdownPausedRemaining = 0;
+            updateCountdownDisplay();
+            // trigger finish UX: flash, beep, vibrate
             try {
                 const bar = document.querySelector('.top-bar');
                 if (bar) {
@@ -385,13 +442,14 @@ function startCountdown(seconds) {
                     };
                     bar.addEventListener('animationend', onAnimEnd);
                 }
-                // beep and vibrate (if supported)
                 try { playBeep(350, 880, 0.12); } catch (e) {}
                 try { if (navigator.vibrate) navigator.vibrate([200,100,200]); } catch (e) {}
-            } catch (e) { /* ignore if DOM not present */ }
+            } catch (e) { /* ignore */ }
+            return;
         }
         updateCountdownDisplay();
-    }, 1000);
+    }, 250);
+    updateCountdownDisplay();
 }
 
 function stopCountdown() {
@@ -399,18 +457,21 @@ function stopCountdown() {
         clearInterval(countdownInterval);
         countdownInterval = null;
     }
-}
-
-function resetCountdown() {
-    stopCountdown();
-    countdownRemaining = 0;
+    if (countdownEndTime) {
+        const remMs = countdownEndTime - Date.now();
+        countdownPausedRemaining = Math.max(0, Math.ceil(remMs / 1000));
+        countdownEndTime = null;
+        countdownPaused = true;
+    }
     updateCountdownDisplay();
 }
 
-// Optional: allow resetting elapsed
-function resetElapsed() {
-    if (elapsedInterval) { clearInterval(elapsedInterval); elapsedInterval = null; }
-    elapsedSeconds = 0; elapsedRunning = false; updateElapsedDisplay();
+function resetCountdown() {
+    if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
+    countdownEndTime = null;
+    countdownPaused = false;
+    countdownPausedRemaining = 0;
+    updateCountdownDisplay();
 }
 
 /* Play a short beep using Web Audio API. frequency in Hz, duration in ms */
