@@ -103,6 +103,11 @@ textarea.comment {
     min-width: 0;
 }
 
+/* Highlight imported reps until user focuses the field */
+.reps.imported-rep {
+    color: #f39c12;
+}
+
 .delete-btn {
     background: transparent;
     color: #3c3c3c;
@@ -291,7 +296,7 @@ function addExercise(nameOverride = null) {
     saveData();
 }
 
-function createExerciseBlock(name, comment = "", sets = []) {
+function createExerciseBlock(name, comment = "", sets = [], setsImported = false) {
     const block = document.createElement("div");
     block.className = "exercise-block";
     block.setAttribute("data-exercise", name);
@@ -312,7 +317,7 @@ function createExerciseBlock(name, comment = "", sets = []) {
 
     document.getElementById("logContainer").appendChild(block);
 
-    sets.forEach(s => addSet(block.querySelector(".add-btn"), s.weight, s.reps));
+    sets.forEach(s => addSet(block.querySelector(".add-btn"), s.weight, s.reps, setsImported));
 
     if (comment.trim() !== "") {
         const commentBox = block.querySelector(".comment");
@@ -327,7 +332,7 @@ function toggleComment(btn) { const block = btn.closest(".exercise-block"); cons
 function deleteExercise(btn) { const block = btn.closest(".exercise-block"); if (confirm(`Delete exercise "${block.getAttribute("data-exercise")}"?`)) { block.remove(); saveData(); } }
 
 /* ---------------- SET CONTROL ---------------- */
-function addSet(button, weight = "", reps = "") {
+function addSet(button, weight = "", reps = "", imported = false) {
     const setsDiv = button.parentElement.querySelector(".sets");
     const row = document.createElement("div");
     row.className = "set-row";
@@ -339,6 +344,17 @@ function addSet(button, weight = "", reps = "") {
         <button class="delete-btn" onclick="deleteRow(this)">×</button>
     `;
     setsDiv.appendChild(row);
+    // If this set was imported, mark the reps input so it's styled until the user focuses it
+    try {
+        const repsInput = row.querySelector('.reps');
+        if (imported && repsInput && repsInput.value.trim() !== '') {
+            repsInput.classList.add('imported-rep');
+            repsInput.addEventListener('focus', function () {
+                this.classList.remove('imported-rep');
+                saveData();
+            });
+        }
+    } catch (e) { /* ignore issues in older browsers */ }
     saveData();
 }
 function deleteRow(btn) { btn.parentElement.remove(); saveData(); }
@@ -434,7 +450,7 @@ function importExercises() {
             if (fallbackX) { sets.push({ weight: fallbackX[1], reps: fallbackX[2].replace(/\++$/g, '') }); return; }
         });
 
-        createExerciseBlock(name, "", sets);
+        createExerciseBlock(name, "", sets, true);
         lastCreated = document.querySelector('.exercise-block:last-of-type');
     });
 
