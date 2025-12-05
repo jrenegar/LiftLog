@@ -327,49 +327,92 @@ function importExercises() {
 
     const lines = text.split("\n").map(l => l.trim()).filter(l => l);
 
+    // We'll support these token types:
+    // - weight#    (e.g. 100#) sets weight persistently for following reps tokens
+    // - weightxreps (e.g. 100x8) single set with weight and reps
+    // - reps only   (e.g. 10) uses persistent weight if present, else blank
+    // Also allow comment lines that start with ';' to attach to the previous exercise.
+
+    let lastCreated = null;
     lines.forEach(line => {
-        const parts = line.split(/\s+/);
-        if (!parts.length) return;
-
-        let nameParts = [];
-        let tokensStartIndex = 1;
-
-        // Detect where exercise name ends and sets begin
-        for (let i = 1; i < parts.length; i++) {
-            if (/\d/.test(parts[i])) { 
-                tokensStartIndex = i;
-                break;
+        if (!line) return;
+        // Comment line for previous exercise
+        if (line.startsWith(";")) {
+            const comment = line.substring(1).trim();
+            if (lastCreated) {
+                const commentBox = lastCreated.querySelector('.comment');
+                commentBox.value = comment;
+                commentBox.style.display = 'block';
+                lastCreated.querySelector('.comment-toggle').textContent = 'Hide Comment';
             }
-            nameParts.push(parts[i-1]);
+            return;
         }
 
-        const name = nameParts.length ? nameParts.join(" ") : parts[0];
-        const setTokens = parts.slice(tokensStartIndex);
+        const parts = line.split(/\s+/).filter(p => p);
+        if (!parts.length) return;
+
+        // Helper to clean tokens (remove surrounding [](), trailing commas/semicolons)
+        const clean = t => t.replace(/^[[\(]+|[\]\)\,;]+$/g, '');
+
+        const isWeightHash = t => /^\d+(?:\.\d+)?#$/.test(t);
+        // weightxreps where reps can be a number, a range (12-15), and may have trailing + signs
+        const isWeightXReps = t => /^(\d+(?:\.\d+)?)x(\d+(?:-\d+)?\+*)$/i.test(t);
+        // reps-only: number or range, optionally with + or ++ which should be ignored
+        const isRepsOnly = t => /^\d+(?:-\d+)?\+*$/.test(t);
+
+        // find first token that looks like a set token
+        let idx = parts.findIndex(p => {
+            const t = clean(p);
+            return isWeightHash(t) || isWeightXReps(t) || isRepsOnly(t);
+        });
+
+        let name = '';
+        let setTokens = [];
+        if (idx === -1) {
+            // no set tokens: whole line is exercise name
+            name = parts.join(' ');
+            setTokens = [];
+        } else {
+            name = parts.slice(0, idx).join(' ');
+            setTokens = parts.slice(idx).map(clean);
+        }
+
+        if (!name) name = parts[0];
 
         let sets = [];
         let persistentWeight = null;
 
         setTokens.forEach(token => {
-            // Format: Weight# → weight applies to all reps after
-            if (token.includes("#")) {
-                persistentWeight = token.replace("#", "");
+            const t = token.trim();
+            if (!t) return;
+
+            if (isWeightHash(t)) {
+                persistentWeight = t.replace('#', '');
                 return;
             }
 
-            // Format: WeightxReps
-            if (token.includes("x")) {
-                const [w, r] = token.split("x");
-                sets.push({ weight: w.trim(), reps: r.trim() });
+            if (isWeightXReps(t)) {
+                const m = t.match(/^(\d+(?:\.\d+)?)x(\d+(?:-\d+)?\+*)$/i);
+                if (m) {
+                    const repsRaw = m[2].replace(/\++$/g, '');
+                    sets.push({ weight: m[1], reps: repsRaw });
+                }
                 return;
             }
 
-            // Format: reps only
-            if (!isNaN(token)) {
-                sets.push({ weight: persistentWeight ?? "", reps: token });
+            if (isRepsOnly(t)) {
+                const repsVal = t.replace(/\++$/g, '');
+                sets.push({ weight: persistentWeight ?? '', reps: repsVal });
+                return;
             }
+
+            // fallback: try to parse things like '100x8,' or '10,' after cleaning
+            const fallbackX = t.match(/^(\d+(?:\.\d+)?)x(\d+(?:-\d+)?\+*)$/i);
+            if (fallbackX) { sets.push({ weight: fallbackX[1], reps: fallbackX[2].replace(/\++$/g, '') }); return; }
         });
 
         createExerciseBlock(name, "", sets);
+        lastCreated = document.querySelector('.exercise-block:last-of-type');
     });
 
     closeImportModal();
