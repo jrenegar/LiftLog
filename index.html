@@ -167,6 +167,38 @@ textarea.comment {
 .import-exercises-main { background: #3c3c3c; color: #d4d4d4; }
 .export-btn { background: #3c3c3c; color: #d4d4d4; }
 
+/* Top bar timers */
+.top-bar {
+    background: #252526;
+    padding: 8px 14px;
+    border-radius: 8px;
+    max-width: 900px;
+    margin: 0 auto 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 1200;
+}
+.top-bar .timer-display { display:flex; gap:12px; color: #d4d4d4; font-size:14px; }
+.top-bar .timer-buttons { display:flex; gap:8px; }
+.top-bar .timer-buttons button { background:#3c3c3c; color:#d4d4d4; border:none; padding:6px 8px; border-radius:6px; cursor:pointer; }
+.top-bar .timer-buttons button:hover { background:#444; }
+
+/* Flashing alert when countdown finishes */
+.top-bar.flash {
+    animation: flashRed 1s ease-in-out 4;
+}
+@keyframes flashRed {
+    0% { background: #252526; }
+    25% { background: #be5046; }
+    50% { background: #252526; }
+    75% { background: #be5046; }
+    100% { background: #252526; }
+}
+
 /* ---------------- MODALS ---------------- */
 .modal-bg {
     position: fixed;
@@ -227,6 +259,21 @@ textarea.comment {
 
 <body>
 
+<div class="top-bar">
+    <div class="timer-display">
+        <div><strong>Elapsed:</strong> <span id="elapsedDisplay">00:00</span></div>
+        <div><strong>Timer:</strong> <span id="countdownDisplay">00:00</span></div>
+    </div>
+    <div class="timer-buttons">
+        <button onclick="startCountdown(60)">60s</button>
+        <button onclick="startCountdown(90)">90s</button>
+        <button onclick="startCountdown(120)">2m</button>
+        <button onclick="startCountdown(180)">3m</button>
+        <button onclick="stopCountdown()">Stop</button>
+        <button onclick="resetCountdown()">Reset</button>
+    </div>
+</div>
+
 <h2>Workout Log</h2>
 
 <div id="logContainer"></div>
@@ -286,6 +333,113 @@ function closeImportModal() { document.getElementById("importModalBg").style.dis
 function openExportModal() { document.getElementById("exportText").value = generateExportText(); document.getElementById("exportModalBg").style.display = "flex"; }
 function closeExportModal() { document.getElementById("exportModalBg").style.display = "none"; }
 function copyExport() { const textarea = document.getElementById("exportText"); textarea.select(); document.execCommand("copy"); alert("Copied to clipboard!"); }
+
+/* ---------------- TIMERS (Top Bar) ---------------- */
+let countdownInterval = null;
+let countdownRemaining = 0; // seconds
+let elapsedInterval = null;
+let elapsedSeconds = 0;
+let elapsedRunning = false;
+
+function pad2(n) { return n.toString().padStart(2, '0'); }
+
+function formatTimeSeconds(s) {
+    if (s <= 0) return '00:00';
+    const mm = Math.floor(s / 60);
+    const ss = Math.floor(s % 60);
+    return `${pad2(mm)}:${pad2(ss)}`;
+}
+
+function updateCountdownDisplay() {
+    document.getElementById('countdownDisplay').textContent = formatTimeSeconds(countdownRemaining);
+}
+
+function updateElapsedDisplay() {
+    document.getElementById('elapsedDisplay').textContent = formatTimeSeconds(elapsedSeconds);
+}
+
+function startElapsed() {
+    if (elapsedRunning) return;
+    elapsedRunning = true;
+    elapsedInterval = setInterval(() => { elapsedSeconds++; updateElapsedDisplay(); }, 1000);
+}
+
+function startCountdown(seconds) {
+    // Start elapsed timer on first countdown
+    startElapsed();
+    if (countdownInterval) clearInterval(countdownInterval);
+    countdownRemaining = Math.max(0, Math.floor(seconds));
+    updateCountdownDisplay();
+    countdownInterval = setInterval(() => {
+        countdownRemaining--;
+        if (countdownRemaining <= 0) {
+            clearInterval(countdownInterval);
+            countdownInterval = null;
+            countdownRemaining = 0;
+            // Flash the top bar to indicate countdown finished
+            try {
+                const bar = document.querySelector('.top-bar');
+                if (bar) {
+                    bar.classList.add('flash');
+                    const onAnimEnd = function () {
+                        bar.classList.remove('flash');
+                        bar.removeEventListener('animationend', onAnimEnd);
+                    };
+                    bar.addEventListener('animationend', onAnimEnd);
+                }
+                // beep and vibrate (if supported)
+                try { playBeep(350, 880, 0.12); } catch (e) {}
+                try { if (navigator.vibrate) navigator.vibrate([200,100,200]); } catch (e) {}
+            } catch (e) { /* ignore if DOM not present */ }
+        }
+        updateCountdownDisplay();
+    }, 1000);
+}
+
+function stopCountdown() {
+    if (countdownInterval) {
+        clearInterval(countdownInterval);
+        countdownInterval = null;
+    }
+}
+
+function resetCountdown() {
+    stopCountdown();
+    countdownRemaining = 0;
+    updateCountdownDisplay();
+}
+
+// Optional: allow resetting elapsed
+function resetElapsed() {
+    if (elapsedInterval) { clearInterval(elapsedInterval); elapsedInterval = null; }
+    elapsedSeconds = 0; elapsedRunning = false; updateElapsedDisplay();
+}
+
+/* Play a short beep using Web Audio API. frequency in Hz, duration in ms */
+function playBeep(duration = 300, frequency = 880, volume = 0.12) {
+    try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.type = 'sine';
+        o.frequency.value = frequency;
+        g.gain.value = volume;
+        o.connect(g);
+        g.connect(ctx.destination);
+        o.start();
+        setTimeout(() => {
+            try { o.stop(); } catch (e) {}
+            try { g.disconnect(); } catch (e) {}
+            try { o.disconnect(); } catch (e) {}
+            if (ctx.close) ctx.close();
+        }, duration);
+    } catch (e) {
+        // ignore if audio can't be played
+    }
+}
+
 
 /* ---------------- EXERCISE CREATION ---------------- */
 function addExercise(nameOverride = null) {
