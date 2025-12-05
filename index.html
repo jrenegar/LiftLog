@@ -22,7 +22,7 @@ body {
 h2 {
     text-align: center;
     margin-bottom: 20px;
-    color: #569cd6;
+    color: #ffffff;
 }
 
 /* ---------------- EXERCISE BLOCK ---------------- */
@@ -37,6 +37,13 @@ h2 {
     overflow: hidden;
 }
 
+/* Make block a vertical flex container so inner controls can align */
+.exercise-block {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
 .exercise-header {
     display: flex;
     justify-content: space-between;
@@ -47,7 +54,7 @@ h2 {
 .exercise-header h3 {
     margin: 0;
     font-size: 19px;
-    color: #4ec9b0;
+    color: #f39c12;
 }
 
 .comment-toggle {
@@ -97,29 +104,31 @@ textarea.comment {
 }
 
 .delete-btn {
-    background: #be5046;
-    color: white;
+    background: transparent;
+    color: #3c3c3c;
     border: none;
-    border-radius: 50%;
-    width: 32px;
-    height: 32px;
+    border-radius: 0;
+    padding: 0 8px;
+    height: auto;
+    width: auto;
     font-size: 18px;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
 }
 
 .delete-exercise-btn {
-    background: #be5046;
-    color: white;
+    background: transparent;
+    color: #be5046;
     border: none;
-    border-radius: 6px;
-    width: 32px;
-    height: 32px;
+    border-radius: 0;
+    padding: 0 8px;
+    height: auto;
+    width: auto;
     font-size: 18px;
     cursor: pointer;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
 }
@@ -135,9 +144,23 @@ textarea.comment {
     margin-top: 12px;
 }
 
-.add-exercise-main { background: #007acc; color: #ffffff; }
-.import-exercises-main { background: #28a745; color: #ffffff; }
-.export-btn { background: #6f42c1; color: #ffffff; }
+/* Small right-aligned + button inside each exercise block */
+.exercise-block .add-btn {
+    width: auto;
+    padding: 4px 8px;
+    font-size: 18px;
+    background: transparent;
+    color: #3c3c3c;
+    border: none;
+    border-radius: 4px;
+    align-self: flex-end;
+    margin-top: 4px;
+}
+.exercise-block .add-btn:hover { color: #d4d4d4; }
+
+.add-exercise-main { background: #3c3c3c; color: #d4d4d4; }
+.import-exercises-main { background: #3c3c3c; color: #d4d4d4; }
+.export-btn { background: #3c3c3c; color: #d4d4d4; }
 
 /* ---------------- MODALS ---------------- */
 .modal-bg {
@@ -199,7 +222,7 @@ textarea.comment {
 
 <body>
 
-<h2>Workout Tracker</h2>
+<h2>Workout Log</h2>
 
 <div id="logContainer"></div>
 
@@ -278,13 +301,13 @@ function createExerciseBlock(name, comment = "", sets = []) {
         <div class="exercise-header">
             <h3>${name}</h3>
             <div style="display:flex; gap:8px; align-items:center;">
-                <button class="comment-toggle" onclick="toggleComment(this)">Comment</button>
+                <button class="comment-toggle" onclick="toggleComment(this)" title="Comment">...</button>
                 <button class="delete-exercise-btn" onclick="deleteExercise(this)">×</button>
             </div>
         </div>
         <textarea class="comment" placeholder="Add comment..." oninput="saveData()">${comment}</textarea>
         <div class="sets"></div>
-        <button class="add-btn" onclick="addSet(this)">+ Add Set</button>
+        <button class="add-btn" onclick="addSet(this)" title="Add set">+</button>
     `;
 
     document.getElementById("logContainer").appendChild(block);
@@ -294,13 +317,13 @@ function createExerciseBlock(name, comment = "", sets = []) {
     if (comment.trim() !== "") {
         const commentBox = block.querySelector(".comment");
         commentBox.style.display = "block";
-        block.querySelector(".comment-toggle").textContent = "Hide Comment";
+        block.querySelector(".comment-toggle").title = "Hide Comment";
     }
 
     addDragAndDrop(block);
 }
 
-function toggleComment(btn) { const block = btn.closest(".exercise-block"); const commentBox = block.querySelector(".comment"); const isVisible = commentBox.style.display === "block"; commentBox.style.display = isVisible ? "none" : "block"; btn.textContent = isVisible ? "Comment" : "Hide Comment"; }
+function toggleComment(btn) { const block = btn.closest(".exercise-block"); const commentBox = block.querySelector(".comment"); const isVisible = commentBox.style.display === "block"; commentBox.style.display = isVisible ? "none" : "block"; btn.title = isVisible ? "Comment" : "Hide Comment"; }
 function deleteExercise(btn) { const block = btn.closest(".exercise-block"); if (confirm(`Delete exercise "${block.getAttribute("data-exercise")}"?`)) { block.remove(); saveData(); } }
 
 /* ---------------- SET CONTROL ---------------- */
@@ -343,7 +366,7 @@ function importExercises() {
                 const commentBox = lastCreated.querySelector('.comment');
                 commentBox.value = comment;
                 commentBox.style.display = 'block';
-                lastCreated.querySelector('.comment-toggle').textContent = 'Hide Comment';
+                lastCreated.querySelector('.comment-toggle').title = 'Hide Comment';
             }
             return;
         }
