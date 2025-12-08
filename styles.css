@@ -1,0 +1,262 @@
+/* ---------------- GLOBAL ---------------- */
+* , *::before, *::after {
+    box-sizing: border-box;
+}
+
+/* VS Code Dark theme inspired */
+body {
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 15px;
+    background: #1e1e1e;
+    color: #d4d4d4;
+}
+
+h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #ffffff;
+}
+
+/* ---------------- EXERCISE BLOCK ---------------- */
+.exercise-block {
+    background: #252526;
+    padding: 12px 14px;
+    margin: 15px auto;
+    border-radius: 10px;
+    max-width: 500px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+    cursor: grab;
+    overflow: hidden;
+}
+
+/* Make block a vertical flex container so inner controls can align */
+.exercise-block {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.exercise-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.exercise-header h3 {
+    margin: 0;
+    font-size: 19px;
+    color: #f39c12;
+}
+
+.comment-toggle {
+    background: #3c3c3c;
+    color: #d4d4d4;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+textarea.comment {
+    width: 100%;
+    margin-top: 10px;
+    padding: 10px;
+    font-size: 15px;
+    border-radius: 8px;
+    border: 1px solid #3c3c3c;
+    background: #1e1e1e;
+    color: #d4d4d4;
+    resize: vertical;
+    display: none;
+    max-width: 100%;
+    box-sizing: border-box;
+    max-height: 40vh;
+    overflow: auto;
+}
+
+/* ---------------- SETS ---------------- */
+.sets {
+    margin-top: 8px;
+}
+
+.set-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.set-row input {
+    flex: 1;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #3c3c3c;
+    background: #1e1e1e;
+    color: #d4d4d4;
+    font-size: 15px;
+    min-width: 0;
+}
+
+/* Highlight imported reps until user focuses the field */
+.reps.imported-rep {
+    color: #f39c12;
+}
+
+.delete-btn {
+    background: transparent;
+    color: #3c3c3c;
+    border: none;
+    border-radius: 0;
+    padding: 0 8px;
+    height: auto;
+    width: auto;
+    font-size: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.delete-exercise-btn {
+    background: transparent;
+    color: #be5046;
+    border: none;
+    border-radius: 0;
+    padding: 0 8px;
+    height: auto;
+    width: auto;
+    font-size: 18px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ---------------- BUTTONS ---------------- */
+.add-btn, .add-exercise-main, .import-exercises-main, .export-btn {
+    width: 100%;
+    padding: 13px;
+    font-size: 16px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    margin-top: 12px;
+}
+
+/* Small right-aligned + button inside each exercise block */
+.exercise-block .add-btn {
+    width: auto;
+    padding: 4px 8px;
+    font-size: 18px;
+    background: transparent;
+    color: #3c3c3c;
+    border: none;
+    border-radius: 4px;
+    align-self: flex-end;
+    margin-top: 4px;
+}
+.exercise-block .add-btn:hover { color: #d4d4d4; }
+
+.add-exercise-main { background: #3c3c3c; color: #d4d4d4; }
+.import-exercises-main { background: #3c3c3c; color: #d4d4d4; }
+.export-btn { background: #3c3c3c; color: #d4d4d4; }
+
+/* Top bar timers */
+.top-bar {
+    background: #252526;
+    padding: 8px 14px;
+    border-radius: 8px;
+    max-width: 900px;
+    margin: 0 auto 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 1200;
+}
+.top-bar .timer-display { display:flex; gap:12px; color: #d4d4d4; font-size:14px; }
+.top-bar .timer-buttons { display:flex; gap:8px; }
+.top-bar .timer-buttons button { background:#3c3c3c; color:#d4d4d4; border:none; padding:6px 8px; border-radius:6px; cursor:pointer; }
+.top-bar .timer-buttons button:hover { background:#444; }
+
+/* Flashing alert when countdown finishes */
+.top-bar.flash {
+    animation: flashRed 1s ease-in-out 4;
+}
+@keyframes flashRed {
+    0% { background: #252526; }
+    25% { background: #be5046; }
+    50% { background: #252526; }
+    75% { background: #be5046; }
+    100% { background: #252526; }
+}
+    
+    #historySlide { white-space:pre-wrap; font-family:monospace; font-size:13px; }
+
+    /* Full-screen history page */
+    .history-page {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.85);
+        z-index: 2000;
+        display: flex;
+        align-items: flex-start;
+        overflow: auto;
+        padding: 24px;
+    }
+    .history-page .modal-like { max-width: 900px; margin: 0 auto; }
+
+/* ---------------- MODALS ---------------- */
+.modal-bg {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.7);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal {
+    background: #252526;
+    padding: 20px;
+    width: 90%;
+    max-width: 400px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.7);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    color: #d4d4d4;
+    max-height: 80vh;
+    overflow: auto;
+}
+
+.modal select, .modal textarea {
+    width: 100%;
+    padding: 12px;
+    margin-top: 10px;
+    border-radius: 8px;
+    border: 1px solid #3c3c3c;
+    background: #1e1e1e;
+    color: #d4d4d4;
+    font-size: 16px;
+    box-sizing: border-box;
+}
+
+.confirm-modal, .close-modal {
+    padding: 12px;
+    font-size: 16px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.confirm-modal { background: #007acc; color: white; }
+.close-modal { background: #be5046; color: white; }
