@@ -1,251 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no" />
-<title>Workout Tracker</title>
-<style>
-/* ---------------- GLOBAL ---------------- */
-*, *::before, *::after {
-    box-sizing: border-box;
-}
-
-/* VS Code Dark theme inspired */
-body {
-    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-    margin: 0;
-    padding: 15px;
-    background: #1e1e1e;
-    color: #d4d4d4;
-}
-
-h2 {
-    text-align: center;
-    margin-bottom: 20px;
-    color: #ffffff;
-}
-
-/* ---------------- EXERCISE BLOCK ---------------- */
-.exercise-block {
-    background: #252526;
-    padding: 12px 14px;
-    margin: 15px auto;
-    border-radius: 10px;
-    max-width: 500px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.5);
-    cursor: grab;
-    overflow: hidden;
-}
-
-/* Make block a vertical flex container so inner controls can align */
-.exercise-block {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.exercise-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 6px;
-}
-
-.exercise-header h3 {
-    margin: 0;
-    font-size: 19px;
-    color: #f39c12;
-}
-
-.comment-toggle {
-    background: #3c3c3c;
-    color: #d4d4d4;
-    border: none;
-    padding: 6px 10px;
-    border-radius: 6px;
-    font-size: 14px;
-    cursor: pointer;
-}
-
-textarea.comment {
-    width: 100%;
-    margin-top: 10px;
-    padding: 10px;
-    font-size: 15px;
-    border-radius: 8px;
-    border: 1px solid #3c3c3c;
-    background: #1e1e1e;
-    color: #d4d4d4;
-    resize: vertical;
-    display: none;
-}
-
-/* ---------------- SETS ---------------- */
-.sets {
-    margin-top: 8px;
-}
-
-.set-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-top: 8px;
-}
-
-.set-row input {
-    flex: 1;
-    padding: 10px;
-    border-radius: 8px;
-    border: 1px solid #3c3c3c;
-    background: #1e1e1e;
-    color: #d4d4d4;
-    font-size: 15px;
-    min-width: 0;
-}
-
-/* Highlight imported reps until user focuses the field */
-.reps.imported-rep {
-    color: #f39c12;
-}
-
-.delete-btn {
-    background: transparent;
-    color: #3c3c3c;
-    border: none;
-    border-radius: 0;
-    padding: 0 8px;
-    height: auto;
-    width: auto;
-    font-size: 18px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-}
-
-.delete-exercise-btn {
-    background: transparent;
-    color: #be5046;
-    border: none;
-    border-radius: 0;
-    padding: 0 8px;
-    height: auto;
-    width: auto;
-    font-size: 18px;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-}
-
-/* ---------------- BUTTONS ---------------- */
-.add-btn, .add-exercise-main, .import-exercises-main, .export-btn {
-    width: 100%;
-    padding: 13px;
-    font-size: 16px;
-    border: none;
-    border-radius: 10px;
-    cursor: pointer;
-    margin-top: 12px;
-}
-
-/* Small right-aligned + button inside each exercise block */
-.exercise-block .add-btn {
-    width: auto;
-    padding: 4px 8px;
-    font-size: 18px;
-    background: transparent;
-    color: #3c3c3c;
-    border: none;
-    border-radius: 4px;
-    align-self: flex-end;
-    margin-top: 4px;
-}
-.exercise-block .add-btn:hover { color: #d4d4d4; }
-
-.add-exercise-main { background: #3c3c3c; color: #d4d4d4; }
-.import-exercises-main { background: #3c3c3c; color: #d4d4d4; }
-.export-btn { background: #3c3c3c; color: #d4d4d4; }
-
-/* Top bar timers */
-.top-bar {
-    background: #252526;
-    padding: 8px 14px;
-    border-radius: 8px;
-    max-width: 900px;
-    margin: 0 auto 12px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
-    position: sticky;
-    top: 0;
-    z-index: 1200;
-}
-.top-bar .timer-display { display:flex; gap:12px; color: #d4d4d4; font-size:14px; }
-.top-bar .timer-buttons { display:flex; gap:8px; }
-.top-bar .timer-buttons button { background:#3c3c3c; color:#d4d4d4; border:none; padding:6px 8px; border-radius:6px; cursor:pointer; }
-.top-bar .timer-buttons button:hover { background:#444; }
-
-/* Flashing alert when countdown finishes */
-.top-bar.flash {
-    animation: flashRed 1s ease-in-out 4;
-}
-@keyframes flashRed {
-    0% { background: #252526; }
-    25% { background: #be5046; }
-    50% { background: #252526; }
-    75% { background: #be5046; }
-    100% { background: #252526; }
-}
-
-/* ---------------- MODALS ---------------- */
-.modal-bg {
-    position: fixed;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    background: rgba(0,0,0,0.7);
-    display: none;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-}
-
-.modal {
-    background: #252526;
-    padding: 20px;
-    width: 90%;
-    max-width: 400px;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.7);
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    color: #d4d4d4;
-}
-
-.modal select, .modal textarea {
-    width: 100%;
-    padding: 12px;
-    margin-top: 10px;
-    border-radius: 8px;
-    border: 1px solid #3c3c3c;
-    background: #1e1e1e;
-    color: #d4d4d4;
-    font-size: 16px;
-}
-
-.confirm-modal, .close-modal {
-    padding: 12px;
-    font-size: 16px;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-}
-
-.confirm-modal { background: #007acc; color: white; }
-.close-modal { background: #be5046; color: white; }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no" />
+  <title>Workout Tracker</title>
+  <link rel="stylesheet" href="styles.css">
   <link rel="manifest" href="manifest.json">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
@@ -255,6 +14,8 @@ textarea.comment {
       navigator.serviceWorker.register('service-worker.js');
     }
   </script>
+  <!-- PouchDB local DB for offline history -->
+  <script src="https://unpkg.com/pouchdb@7.3.1/dist/pouchdb.min.js"></script>
 </head>
 
 <body>
@@ -265,10 +26,10 @@ textarea.comment {
         <div><strong>Timer:</strong> <span id="countdownDisplay">00:00</span></div>
     </div>
     <div class="timer-buttons">
-        <button onclick="startCountdown(60)">60s</button>
-        <button onclick="startCountdown(90)">90s</button>
-        <button onclick="startCountdown(120)">2m</button>
-        <button onclick="startCountdown(180)">3m</button>
+        <button data-action="startCountdown" data-seconds="60">60s</button>
+        <button data-action="startCountdown" data-seconds="90">90s</button>
+        <button data-action="startCountdown" data-seconds="120">2m</button>
+        <button data-action="startCountdown" data-seconds="180">3m</button>
     </div>
 </div>
 
@@ -276,9 +37,11 @@ textarea.comment {
 
 <div id="logContainer"></div>
 
-<button class="add-exercise-main" onclick="openAddExerciseModal()">+ Add Exercise</button>
-<button class="import-exercises-main" onclick="openImportModal()">Import Exercises</button>
-<button class="export-btn" onclick="openExportModal()">Export Exercises</button>
+<button class="add-exercise-main" data-action="openAddExerciseModal">+ Add Exercise</button>
+<button class="import-exercises-main" data-action="openImportModal">Import Exercises</button>
+<button class="export-btn" data-action="openExportModal">Export Exercises</button>
+<button class="confirm-modal" data-action="saveWorkout" style="margin-top:10px;">Save Workout</button>
+<button class="confirm-modal" data-action="openHistory" style="margin-top:10px;">History</button>
 
 <!-- Add Exercise Modal -->
 <div id="addExerciseModalBg" class="modal-bg">
@@ -295,8 +58,8 @@ textarea.comment {
             <option>Tricep Pushdown</option>
             <option>Leg Press</option>
         </select>
-        <button class="confirm-modal" onclick="addExercise()">Add</button>
-        <button class="close-modal" onclick="closeAddExerciseModal()">Cancel</button>
+        <button class="confirm-modal" data-action="addExercise">Add</button>
+        <button class="close-modal" data-action="closeAddExerciseModal">Cancel</button>
     </div>
 </div>
 
@@ -306,8 +69,8 @@ textarea.comment {
         <h3>Import Exercises</h3>
         <p>Paste exercises here. <br>Format: 'ExerciseName [weightxreps|reps]'</p>
         <textarea id="importText" rows="8" placeholder="Bench Press 100x10 105x8 110x6&#10;Squat 12-15 10-12&#10;Deadlift"></textarea>
-        <button class="confirm-modal" onclick="importExercises()">Import</button>
-        <button class="close-modal" onclick="closeImportModal()">Cancel</button>
+        <button class="confirm-modal" data-action="importExercises">Import</button>
+        <button class="close-modal" data-action="closeImportModal">Cancel</button>
     </div>
 </div>
 
@@ -316,424 +79,32 @@ textarea.comment {
     <div class="modal">
         <h3>Export Exercises</h3>
         <textarea id="exportText" rows="10" readonly></textarea>
-        <button class="confirm-modal" onclick="copyExport()">Copy to Clipboard</button>
-        <button class="close-modal" onclick="closeExportModal()">Close</button>
+        <button class="confirm-modal" data-action="copyExport">Copy to Clipboard</button>
+        <button class="close-modal" data-action="closeExportModal">Close</button>
     </div>
 </div>
 
-<script>
-function openAddExerciseModal() { document.getElementById("addExerciseModalBg").style.display = "flex"; }
-function closeAddExerciseModal() { document.getElementById("addExerciseModalBg").style.display = "none"; }
-
-function openImportModal() { document.getElementById("importModalBg").style.display = "flex"; }
-function closeImportModal() { document.getElementById("importModalBg").style.display = "none"; document.getElementById("importText").value = ""; }
-
-function openExportModal() { document.getElementById("exportText").value = generateExportText(); document.getElementById("exportModalBg").style.display = "flex"; }
-function closeExportModal() { document.getElementById("exportModalBg").style.display = "none"; }
-function copyExport() { const textarea = document.getElementById("exportText"); textarea.select(); document.execCommand("copy"); alert("Copied to clipboard!"); }
-
-/* TIMERS: timestamp-driven implementation is used further below */
-/* ---------------- TIMERS (Top Bar) ---------------- */
-let countdownInterval = null;
-let countdownDuration = 0; // seconds requested
-let countdownEndTime = null; // timestamp (ms) when countdown should finish
-let countdownPaused = false;
-let countdownPausedRemaining = 0; // seconds remaining when paused
-
-let elapsedInterval = null;
-let elapsedStartTime = null; // timestamp (ms) when elapsed began (taking accumulated into account)
-let elapsedAccumulated = 0; // seconds accumulated before current run
-let elapsedRunning = false;
-
-function pad2(n) { return n.toString().padStart(2, '0'); }
-
-function formatTimeSeconds(s) {
-    if (s <= 0) return '00:00';
-    const mm = Math.floor(s / 60);
-    const ss = Math.floor(s % 60);
-    return `${pad2(mm)}:${pad2(ss)}`;
-}
-
-function updateCountdownDisplay() {
-    let remainingSec = 0;
-    if (countdownEndTime) {
-        const remMs = countdownEndTime - Date.now();
-        remainingSec = Math.max(0, Math.ceil(remMs / 1000));
-    } else if (countdownPaused) {
-        remainingSec = Math.max(0, Math.ceil(countdownPausedRemaining));
-    }
-    document.getElementById('countdownDisplay').textContent = formatTimeSeconds(remainingSec);
-}
-
-function updateElapsedDisplay() {
-    let elapsedSec = elapsedAccumulated;
-    if (elapsedStartTime) {
-        elapsedSec = Math.floor((Date.now() - elapsedStartTime) / 1000);
-    }
-    document.getElementById('elapsedDisplay').textContent = formatTimeSeconds(elapsedSec);
-}
-
-function startElapsed() {
-    if (elapsedRunning) return;
-    // resume from accumulated
-    elapsedStartTime = Date.now() - elapsedAccumulated * 1000;
-    elapsedRunning = true;
-    // update twice a second for snappy UI
-    if (elapsedInterval) clearInterval(elapsedInterval);
-    elapsedInterval = setInterval(updateElapsedDisplay, 500);
-    updateElapsedDisplay();
-}
-
-function stopElapsed() {
-    if (!elapsedRunning) return;
-    // capture accumulated seconds and stop
-    elapsedAccumulated = Math.floor((Date.now() - elapsedStartTime) / 1000);
-    elapsedStartTime = null;
-    elapsedRunning = false;
-    if (elapsedInterval) { clearInterval(elapsedInterval); elapsedInterval = null; }
-    updateElapsedDisplay();
-}
-
-function resetElapsed() {
-    if (elapsedInterval) { clearInterval(elapsedInterval); elapsedInterval = null; }
-    elapsedStartTime = null;
-    elapsedAccumulated = 0;
-    elapsedRunning = false;
-    updateElapsedDisplay();
-}
-
-function startCountdown(seconds) {
-    // If seconds provided, start a fresh countdown; otherwise if paused, resume
-    if (typeof seconds === 'number') {
-        countdownDuration = Math.max(0, Math.floor(seconds));
-        countdownEndTime = Date.now() + countdownDuration * 1000;
-        countdownPaused = false;
-        countdownPausedRemaining = 0;
-    } else if (countdownPaused && countdownPausedRemaining > 0) {
-        countdownEndTime = Date.now() + Math.floor(countdownPausedRemaining) * 1000;
-        countdownPaused = false;
-        countdownPausedRemaining = 0;
-    }
-
-    // Start the elapsed timer when the countdown first starts
-    startElapsed();
-
-    if (countdownInterval) clearInterval(countdownInterval);
-    // update more frequently so UI is responsive after resuming
-    countdownInterval = setInterval(() => {
-        if (!countdownEndTime) return updateCountdownDisplay();
-        const remMs = countdownEndTime - Date.now();
-        if (remMs <= 0) {
-            // finished
-            clearInterval(countdownInterval);
-            countdownInterval = null;
-            countdownEndTime = null;
-            countdownPaused = false;
-            countdownPausedRemaining = 0;
-            updateCountdownDisplay();
-            // trigger finish UX: flash, beep, vibrate
-            try {
-                const bar = document.querySelector('.top-bar');
-                if (bar) {
-                    bar.classList.add('flash');
-                    const onAnimEnd = function () {
-                        bar.classList.remove('flash');
-                        bar.removeEventListener('animationend', onAnimEnd);
-                    };
-                    bar.addEventListener('animationend', onAnimEnd);
-                }
-                try { playBeep(350, 880, 0.12); } catch (e) {}
-                try { if (navigator.vibrate) navigator.vibrate([200,100,200]); } catch (e) {}
-            } catch (e) { /* ignore */ }
-            return;
-        }
-        updateCountdownDisplay();
-    }, 250);
-    updateCountdownDisplay();
-}
-
-function stopCountdown() {
-    if (countdownInterval) {
-        clearInterval(countdownInterval);
-        countdownInterval = null;
-    }
-    if (countdownEndTime) {
-        const remMs = countdownEndTime - Date.now();
-        countdownPausedRemaining = Math.max(0, Math.ceil(remMs / 1000));
-        countdownEndTime = null;
-        countdownPaused = true;
-    }
-    updateCountdownDisplay();
-}
-
-function resetCountdown() {
-    if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
-    countdownEndTime = null;
-    countdownPaused = false;
-    countdownPausedRemaining = 0;
-    updateCountdownDisplay();
-}
-
-/* Play a short beep using Web Audio API. frequency in Hz, duration in ms */
-function playBeep(duration = 300, frequency = 880, volume = 0.12) {
-    try {
-        const AudioCtx = window.AudioContext || window.webkitAudioContext;
-        if (!AudioCtx) return;
-        const ctx = new AudioCtx();
-        const o = ctx.createOscillator();
-        const g = ctx.createGain();
-        o.type = 'sine';
-        o.frequency.value = frequency;
-        g.gain.value = volume;
-        o.connect(g);
-        g.connect(ctx.destination);
-        o.start();
-        setTimeout(() => {
-            try { o.stop(); } catch (e) {}
-            try { g.disconnect(); } catch (e) {}
-            try { o.disconnect(); } catch (e) {}
-            if (ctx.close) ctx.close();
-        }, duration);
-    } catch (e) {
-        // ignore if audio can't be played
-    }
-}
-
-
-/* ---------------- EXERCISE CREATION ---------------- */
-function addExercise(nameOverride = null) {
-    const name = nameOverride || document.getElementById("exerciseSelect").value;
-    if (!name.trim()) return;
-    closeAddExerciseModal();
-    createExerciseBlock(name);
-    saveData();
-}
-
-function createExerciseBlock(name, comment = "", sets = [], setsImported = false) {
-    const block = document.createElement("div");
-    block.className = "exercise-block";
-    block.setAttribute("data-exercise", name);
-    block.setAttribute("draggable", "true");
-
-    block.innerHTML = `
-        <div class="exercise-header">
-            <h3>${name}</h3>
-            <div style="display:flex; gap:8px; align-items:center;">
-                <button class="comment-toggle" onclick="toggleComment(this)" title="Comment">...</button>
-                <button class="delete-exercise-btn" onclick="deleteExercise(this)">×</button>
+<!-- History Page (full-screen) -->
+<div id="historyPage" class="history-page" style="display:none;">
+    <div style="max-width:900px; margin:12px auto;">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+            <h3 style="margin:0;">Workout History</h3>
+            <div style="display:flex; gap:8px;">
+                <button class="confirm-modal" data-action="editCurrentWorkout">Edit</button>
+                <button class="close-modal" data-action="closeHistory">Close</button>
             </div>
         </div>
-        <textarea class="comment" placeholder="Add comment..." oninput="saveData()">${comment}</textarea>
-        <div class="sets"></div>
-        <button class="add-btn" onclick="addSet(this)" title="Add set">+</button>
-    `;
+        <div id="historyCarousel" style="display:flex; align-items:center; gap:8px; margin-top:8px;">
+            <button data-action="historyPrev">◀</button>
+            <div id="historySlide" style="flex:1; min-height:140px; background:#1b1b1b; padding:14px; border-radius:8px; overflow:auto; color:#d4d4d4;"></div>
+            <button data-action="historyNext">▶</button>
+        </div>
+        <div id="historyCounter" style="color:#d4d4d4; font-size:13px; margin-top:8px;"></div>
+    </div>
+</div>
 
-    document.getElementById("logContainer").appendChild(block);
+<script type="module" src="app.js"></script>
 
-    sets.forEach(s => addSet(block.querySelector(".add-btn"), s.weight, s.reps, setsImported));
-
-    if (comment.trim() !== "") {
-        const commentBox = block.querySelector(".comment");
-        commentBox.style.display = "block";
-        block.querySelector(".comment-toggle").title = "Hide Comment";
-    }
-
-    addDragAndDrop(block);
-}
-
-function toggleComment(btn) { const block = btn.closest(".exercise-block"); const commentBox = block.querySelector(".comment"); const isVisible = commentBox.style.display === "block"; commentBox.style.display = isVisible ? "none" : "block"; btn.title = isVisible ? "Comment" : "Hide Comment"; }
-function deleteExercise(btn) { const block = btn.closest(".exercise-block"); if (confirm(`Delete exercise "${block.getAttribute("data-exercise")}"?`)) { block.remove(); saveData(); } }
-
-/* ---------------- SET CONTROL ---------------- */
-function addSet(button, weight = "", reps = "", imported = false) {
-    const setsDiv = button.parentElement.querySelector(".sets");
-    const row = document.createElement("div");
-    row.className = "set-row";
-    row.innerHTML = `
-        <input type="text" class="weight" placeholder="Weight" value="${weight}" 
-               inputmode="decimal" pattern="[0-9]*" oninput="saveData()">
-        <input type="text" class="reps" placeholder="Reps" value="${reps}" 
-               inputmode="numeric" pattern="[0-9]*" oninput="saveData()">
-        <button class="delete-btn" onclick="deleteRow(this)">×</button>
-    `;
-    setsDiv.appendChild(row);
-    // If this set was imported, mark the reps input so it's styled until the user focuses it
-    try {
-        const repsInput = row.querySelector('.reps');
-        if (imported && repsInput && repsInput.value.trim() !== '') {
-            repsInput.classList.add('imported-rep');
-            repsInput.addEventListener('focus', function () {
-                this.classList.remove('imported-rep');
-                saveData();
-            });
-        }
-    } catch (e) { /* ignore issues in older browsers */ }
-    saveData();
-}
-function deleteRow(btn) { btn.parentElement.remove(); saveData(); }
-
-/* ---------------- IMPORT FUNCTION ---------------- */
-function importExercises() {
-    const text = document.getElementById("importText").value.trim();
-    if (!text) { closeImportModal(); return; }
-
-    const lines = text.split("\n").map(l => l.trim()).filter(l => l);
-
-    // We'll support these token types:
-    // - weight#    (e.g. 100#) sets weight persistently for following reps tokens
-    // - weightxreps (e.g. 100x8) single set with weight and reps
-    // - reps only   (e.g. 10) uses persistent weight if present, else blank
-    // Also allow comment lines that start with ';' to attach to the previous exercise.
-
-    let lastCreated = null;
-    lines.forEach(line => {
-        if (!line) return;
-        // Comment line for previous exercise
-        if (line.startsWith(";")) {
-            const comment = line.substring(1).trim();
-            if (lastCreated) {
-                const commentBox = lastCreated.querySelector('.comment');
-                commentBox.value = comment;
-                commentBox.style.display = 'block';
-                lastCreated.querySelector('.comment-toggle').title = 'Hide Comment';
-            }
-            return;
-        }
-
-        const parts = line.split(/\s+/).filter(p => p);
-        if (!parts.length) return;
-
-        // Helper to clean tokens (remove surrounding [](), trailing commas/semicolons)
-        const clean = t => t.replace(/^[[\(]+|[\]\)\,;]+$/g, '');
-
-        const isWeightHash = t => /^\d+(?:\.\d+)?#$/.test(t);
-        // weightxreps where reps can be a number, a range (12-15), and may have trailing + signs
-        const isWeightXReps = t => /^(\d+(?:\.\d+)?)x(\d+(?:-\d+)?\+*)$/i.test(t);
-        // reps-only: number or range, optionally with + or ++ which should be ignored
-        const isRepsOnly = t => /^\d+(?:-\d+)?\+*$/.test(t);
-
-        // find first token that looks like a set token
-        let idx = parts.findIndex(p => {
-            const t = clean(p);
-            return isWeightHash(t) || isWeightXReps(t) || isRepsOnly(t);
-        });
-
-        let name = '';
-        let setTokens = [];
-        if (idx === -1) {
-            // no set tokens: whole line is exercise name
-            name = parts.join(' ');
-            setTokens = [];
-        } else {
-            name = parts.slice(0, idx).join(' ');
-            setTokens = parts.slice(idx).map(clean);
-        }
-
-        if (!name) name = parts[0];
-
-        let sets = [];
-        let persistentWeight = null;
-
-        setTokens.forEach(token => {
-            const t = token.trim();
-            if (!t) return;
-
-            if (isWeightHash(t)) {
-                persistentWeight = t.replace('#', '');
-                return;
-            }
-
-            if (isWeightXReps(t)) {
-                const m = t.match(/^(\d+(?:\.\d+)?)x(\d+(?:-\d+)?\+*)$/i);
-                if (m) {
-                    const repsRaw = m[2].replace(/\++$/g, '');
-                    sets.push({ weight: m[1], reps: repsRaw });
-                }
-                return;
-            }
-
-            if (isRepsOnly(t)) {
-                const repsVal = t.replace(/\++$/g, '');
-                sets.push({ weight: persistentWeight ?? '', reps: repsVal });
-                return;
-            }
-
-            // fallback: try to parse things like '100x8,' or '10,' after cleaning
-            const fallbackX = t.match(/^(\d+(?:\.\d+)?)x(\d+(?:-\d+)?\+*)$/i);
-            if (fallbackX) { sets.push({ weight: fallbackX[1], reps: fallbackX[2].replace(/\++$/g, '') }); return; }
-        });
-
-        createExerciseBlock(name, "", sets, true);
-        lastCreated = document.querySelector('.exercise-block:last-of-type');
-    });
-
-    closeImportModal();
-    saveData();
-}
-
-
-/* ---------------- EXPORT FUNCTION ---------------- */
-function generateExportText() {
-    const exercises = [...document.querySelectorAll(".exercise-block")];
-    let lines = [];
-    exercises.forEach(ex => {
-        const name = ex.getAttribute("data-exercise");
-        const sets = [...ex.querySelectorAll(".set-row")]
-            .filter(r => r.querySelector(".reps").value.trim() !== "")
-            .map(r => {
-                const w = r.querySelector(".weight").value.trim();
-                const rep = r.querySelector(".reps").value.trim();
-                return w ? `${w}x${rep}` : `${rep}`;
-            }).join(" ");
-        lines.push(`${name} ${sets}`.trim());
-        const comment = ex.querySelector(".comment").value.trim();
-        if (comment) lines.push(`;${comment}`);
-    });
-    return lines.join("\n");
-}
-
-/* ---------------- DRAG & DROP ---------------- */
-function addDragAndDrop(block) {
-    block.addEventListener("dragstart", (e) => { e.dataTransfer.setData("text/plain", null); block.classList.add("dragging"); });
-    block.addEventListener("dragend", () => { block.classList.remove("dragging"); saveData(); });
-}
-const container = document.getElementById("logContainer");
-container.addEventListener("dragover", e => {
-    e.preventDefault();
-    const dragging = document.querySelector(".dragging");
-    const afterElement = getDragAfterElement(container, e.clientY);
-    if (!afterElement) container.appendChild(dragging);
-    else container.insertBefore(dragging, afterElement);
-});
-function getDragAfterElement(container, y) {
-    const draggableElements = [...container.querySelectorAll(".exercise-block:not(.dragging)")];
-    return draggableElements.reduce((closest, child) => {
-        const box = child.getBoundingClientRect();
-        const offset = y - box.top - box.height / 2;
-        if (offset < 0 && offset > closest.offset) return { offset: offset, element: child };
-        return closest;
-    }, { offset: Number.NEGATIVE_INFINITY }).element;
-}
-
-/* ---------------- SAVE / LOAD ---------------- */
-function saveData() {
-    const exercises = [...document.querySelectorAll(".exercise-block")];
-    const data = exercises.map(ex => ({
-        name: ex.getAttribute("data-exercise"),
-        comment: ex.querySelector(".comment").value,
-        sets: [...ex.querySelectorAll(".set-row")].map(r => ({
-            weight: r.querySelector(".weight").value,
-            reps: r.querySelector(".reps").value
-        }))
-    }));
-    localStorage.setItem("workoutLog", JSON.stringify(data));
-}
-function loadData() {
-    const saved = JSON.parse(localStorage.getItem("workoutLog") || "[]");
-    saved.forEach(ex => createExerciseBlock(ex.name, ex.comment, ex.sets));
-}
-loadData();
-</script>
 
 </body>
 </html>
