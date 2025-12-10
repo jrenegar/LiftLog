@@ -198,18 +198,19 @@ textarea.comment {
     
     #historySlide { white-space:pre-wrap; font-family:monospace; font-size:13px; }
 
-    /* Full-screen history page */
+    /* History page: replaces workout log in-flow */
     .history-page {
-        position: fixed;
-        inset: 0;
-        background: rgba(0,0,0,0.85);
-        z-index: 2000;
-        display: flex;
-        align-items: flex-start;
-        overflow: auto;
-        padding: 24px;
+        display: none;
+        max-width: 900px;
+        margin: 12px auto;
+        background: #121212;
+        padding: 18px;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.6);
     }
-    .history-page .modal-like { max-width: 900px; margin: 0 auto; }
+    .history-page .history-inner { max-width: 900px; margin: 0 auto; }
+    .history-footer { display:flex; gap:12px; justify-content:center; margin-top:14px; }
+    .history-btn { background:#d4d4d4; color:#111; border:none; padding:10px 14px; border-radius:8px; cursor:pointer; }
 
 /* ---------------- MODALS ---------------- */
 .modal-bg {

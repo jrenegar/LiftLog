@@ -371,8 +371,27 @@ function saveWorkout() {
     }
 }
 
-function openHistory() { document.getElementById('historyPage').style.display = 'flex'; loadHistory(); }
-function closeHistory() { document.getElementById('historyPage').style.display = 'none'; }
+function openHistory() {
+    const main = document.getElementById('mainView');
+    const hist = document.getElementById('historyPage');
+    if (main) main.style.display = 'none';
+    if (hist) hist.style.display = 'block';
+    loadHistory();
+}
+function closeHistory() {
+    const main = document.getElementById('mainView');
+    const hist = document.getElementById('historyPage');
+    if (hist) hist.style.display = 'none';
+    if (main) main.style.display = '';
+}
+
+function clearAllExercises() {
+    const container = document.getElementById('logContainer');
+    if (!container) return;
+    if (!confirm('Clear all exercises from the workout? This cannot be undone.')) return;
+    container.innerHTML = '';
+    saveData();
+}
 
 function loadHistory() {
     historyDocs = [];
@@ -495,6 +514,7 @@ function bindUI() {
         openExportModal: (el) => el.addEventListener('click', openExportModal),
         saveWorkout: (el) => el.addEventListener('click', saveWorkout),
         openHistory: (el) => el.addEventListener('click', openHistory),
+        clearAllExercises: (el) => el.addEventListener('click', clearAllExercises),
         addExercise: (el) => el.addEventListener('click', () => addExercise()),
         closeAddExerciseModal: (el) => el.addEventListener('click', closeAddExerciseModal),
         importExercises: (el) => el.addEventListener('click', importExercises),

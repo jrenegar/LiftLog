@@ -33,15 +33,18 @@
     </div>
 </div>
 
-<h2>Workout Log</h2>
+<div id="mainView">
+    <h2>Workout Log</h2>
 
-<div id="logContainer"></div>
+    <div id="logContainer"></div>
 
-<button class="add-exercise-main" data-action="openAddExerciseModal">+ Add Exercise</button>
-<button class="import-exercises-main" data-action="openImportModal">Import Exercises</button>
-<button class="export-btn" data-action="openExportModal">Export Exercises</button>
-<button class="confirm-modal" data-action="saveWorkout" style="margin-top:10px;">Save Workout</button>
-<button class="confirm-modal" data-action="openHistory" style="margin-top:10px;">History</button>
+    <button class="add-exercise-main" data-action="openAddExerciseModal">+ Add Exercise</button>
+    <button class="import-exercises-main" data-action="openImportModal">Import Exercises</button>
+    <button class="export-btn" data-action="openExportModal">Export Exercises</button>
+    <button class="import-exercises-main" data-action="saveWorkout" style="margin-top:10px;">Save Workout</button>
+    <button class="import-exercises-main" data-action="openHistory" style="margin-top:10px;">History</button>
+    <button class="export-btn" data-action="clearAllExercises" style="margin-top:10px;">Clear All Exercises</button>
+</div>
 
 <!-- Add Exercise Modal -->
 <div id="addExerciseModalBg" class="modal-bg">
@@ -84,22 +87,21 @@
     </div>
 </div>
 
-<!-- History Page (full-screen) -->
+<!-- History Page (replaces main view) -->
 <div id="historyPage" class="history-page" style="display:none;">
-    <div style="max-width:900px; margin:12px auto;">
-        <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
-            <h3 style="margin:0;">Workout History</h3>
-            <div style="display:flex; gap:8px;">
-                <button class="confirm-modal" data-action="editCurrentWorkout">Edit</button>
-                <button class="close-modal" data-action="closeHistory">Close</button>
-            </div>
-        </div>
+    <div class="history-inner">
+        <h3 style="margin:0 0 8px 0;">Workout History</h3>
         <div id="historyCarousel" style="display:flex; align-items:center; gap:8px; margin-top:8px;">
             <button data-action="historyPrev">◀</button>
             <div id="historySlide" style="flex:1; min-height:140px; background:#1b1b1b; padding:14px; border-radius:8px; overflow:auto; color:#d4d4d4;"></div>
             <button data-action="historyNext">▶</button>
         </div>
         <div id="historyCounter" style="color:#d4d4d4; font-size:13px; margin-top:8px;"></div>
+
+        <div class="history-footer">
+            <button class="history-btn" data-action="editCurrentWorkout">Edit</button>
+            <button class="history-btn" data-action="closeHistory">Close</button>
+        </div>
     </div>
 </div>
 
