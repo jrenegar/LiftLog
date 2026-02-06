@@ -203,10 +203,11 @@ textarea.comment {
         display: none;
         max-width: 900px;
         margin: 12px auto;
-        background: #121212;
+        /* match workout log background (no dark contrasting panel) */
+        background: transparent;
         padding: 18px;
         border-radius: 10px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.6);
+        box-shadow: none;
     }
     .history-page .history-inner { max-width: 900px; margin: 0 auto; }
     .history-footer { display:flex; gap:12px; justify-content:center; margin-top:14px; }

@@ -14,8 +14,25 @@
       navigator.serviceWorker.register('service-worker.js');
     }
   </script>
-  <!-- PouchDB local DB for offline history -->
-  <script src="https://unpkg.com/pouchdb@7.3.1/dist/pouchdb.min.js"></script>
+    <!-- Firebase SDKs (compat) - replace with your project's config below -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+    <script>
+        // TODO: Replace with your Firebase project's config
+        // You can find this in the Firebase console -> Project settings -> Your apps
+        // If left empty, app will fall back to localStorage-only behavior.
+        window.FIREBASE_CONFIG = {
+            apiKey: "AIzaSyC4TnREbnkN2xbuPWCXWSjkQKyQ6yLMJhU",
+            authDomain: "workout-log-84497.firebaseapp.com",
+            projectId: "workout-log-84497",
+            storageBucket: "workout-log-84497.firebasestorage.app",
+            messagingSenderId: "456605331444",
+            appId: "1:456605331444:web:193edadbc677307f6b53a1",
+            measurementId: "G-2R86NEN759"
+        };
+    </script>
 </head>
 
 <body>
@@ -30,6 +47,9 @@
         <button data-action="startCountdown" data-seconds="90">90s</button>
         <button data-action="startCountdown" data-seconds="120">2m</button>
         <button data-action="startCountdown" data-seconds="180">3m</button>
+    </div>
+    <div id="authArea" style="margin-left:12px;">
+        <button id="authBtn" data-action="openAuthModal">Login</button>
     </div>
 </div>
 
@@ -86,6 +106,21 @@
         <button class="close-modal" data-action="closeExportModal">Close</button>
     </div>
 </div>
+
+    <!-- Auth Modal -->
+    <div id="authModalBg" class="modal-bg">
+        <div class="modal">
+            <h3>Sign in</h3>
+            <input id="authEmail" type="email" placeholder="Email" />
+            <input id="authPassword" type="password" placeholder="Password" />
+            <div style="display:flex; gap:8px;">
+                <button class="confirm-modal" data-action="loginWithEmail">Sign In</button>
+                <button class="confirm-modal" data-action="registerWithEmail">Register</button>
+                <button class="close-modal" data-action="closeAuthModal">Cancel</button>
+            </div>
+            <div style="margin-top:8px; font-size:13px; color:#bbb">After signing in, saved workouts will use Firestore for storage.</div>
+        </div>
+    </div>
 
 <!-- History Page (replaces main view) -->
 <div id="historyPage" class="history-page" style="display:none;">

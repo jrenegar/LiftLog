@@ -14,7 +14,6 @@ let elapsedStartTime = null; // timestamp (ms) when elapsed began (taking accumu
 let elapsedAccumulated = 0; // seconds accumulated before current run
 let elapsedRunning = false;
 
-let pouchDB = null;
 let historyDocs = [];
 let historyIndex = 0;
 
@@ -339,13 +338,59 @@ function generateExportText() {
     return lines.join("\n");
 }
 
-/* ---------------- POUCHDB HISTORY / EDIT ---------------- */
-function initPouch() {
+/* ---------------- FIREBASE (Auth + Firestore) ---------------- */
+let firebaseApp = null;
+let firebaseAuth = null;
+let firebaseDb = null;
+let currentUser = null;
+
+function initFirebase() {
     try {
-        if (!window.PouchDB) return false;
-        if (!pouchDB) pouchDB = new PouchDB('workouts');
+        if (!window.FIREBASE_CONFIG || Object.keys(window.FIREBASE_CONFIG).length === 0) return false;
+        if (!window.firebase) { console.warn('Firebase SDK not loaded'); return false; }
+        if (!firebase.apps || !firebase.apps.length) firebase.initializeApp(window.FIREBASE_CONFIG);
+        firebaseApp = firebase.app();
+        firebaseAuth = firebase.auth();
+        firebaseDb = firebase.firestore();
+        firebaseAuth.onAuthStateChanged(user => { currentUser = user; updateAuthUI(); });
         return true;
-    } catch (e) { console.error('Pouch init error', e); return false; }
+    } catch (e) { console.error('Firebase init error', e); return false; }
+}
+
+function updateAuthUI() {
+    const btn = document.getElementById('authBtn');
+    if (!btn) return;
+    if (currentUser) {
+        btn.textContent = currentUser.email || 'Signed In';
+        btn.onclick = signOutUser;
+    } else {
+        btn.textContent = 'Login';
+        btn.onclick = openAuthModal;
+    }
+}
+
+function openAuthModal() { document.getElementById('authModalBg').style.display = 'flex'; }
+function closeAuthModal() { document.getElementById('authModalBg').style.display = 'none'; }
+
+function registerWithEmail() {
+    const email = (document.getElementById('authEmail')||{}).value || '';
+    const pass = (document.getElementById('authPassword')||{}).value || '';
+    if (!email || !pass) { alert('Enter email and password'); return; }
+    if (!initFirebase()) { alert('Firebase not configured. Add your config in index.html'); return; }
+    firebaseAuth.createUserWithEmailAndPassword(email, pass).then(() => { alert('Registered and signed in'); closeAuthModal(); }).catch(err => { alert('Register failed: ' + err.message); });
+}
+
+function loginWithEmail() {
+    const email = (document.getElementById('authEmail')||{}).value || '';
+    const pass = (document.getElementById('authPassword')||{}).value || '';
+    if (!email || !pass) { alert('Enter email and password'); return; }
+    if (!initFirebase()) { alert('Firebase not configured. Add your config in index.html'); return; }
+    firebaseAuth.signInWithEmailAndPassword(email, pass).then(() => { alert('Signed in'); closeAuthModal(); }).catch(err => { alert('Sign in failed: ' + err.message); });
+}
+
+function signOutUser() {
+    if (!firebaseAuth) { alert('Not signed in'); return; }
+    firebaseAuth.signOut().then(() => { alert('Signed out'); updateAuthUI(); }).catch(err => { alert('Sign out failed: ' + err.message); });
 }
 
 function saveWorkout() {
@@ -357,13 +402,18 @@ function saveWorkout() {
     if (!exercises.length) { alert('No exercises to save'); return; }
     const timestamp = Date.now();
     const summary = generateExportText();
-    const doc = { _id: 'w:' + timestamp + ':' + Math.random().toString(36).slice(2,8), timestamp, summary, exercises };
+    const payload = { timestamp, summary, exercises };
 
-    if (initPouch()) {
-        pouchDB.put(doc).then(() => { alert('Workout saved locally (PouchDB)'); }).catch(err => { console.error('pouch put err', err); alert('Failed to save to local DB: ' + err.message); });
+    if (initFirebase() && firebaseDb && currentUser) {
+        // save to Firestore under user's collection
+        firebaseDb.collection('workouts').add(Object.assign({ uid: currentUser.uid }, payload))
+            .then(() => { alert('Workout saved to Firestore'); })
+            .catch(err => { console.error('firestore add err', err); alert('Failed to save to Firestore: ' + err.message); });
     } else {
+        // fallback to localStorage
         try {
             const arr = JSON.parse(localStorage.getItem('workoutHistory') || '[]');
+            const doc = Object.assign({ _id: 'w:' + timestamp + ':' + Math.random().toString(36).slice(2,8) }, payload);
             arr.unshift(doc);
             localStorage.setItem('workoutHistory', JSON.stringify(arr.slice(0,200)));
             alert('Workout saved locally (localStorage)');
@@ -376,7 +426,8 @@ function openHistory() {
     const hist = document.getElementById('historyPage');
     if (main) main.style.display = 'none';
     if (hist) hist.style.display = 'block';
-    loadHistory();
+    // Small delay to ensure currentUser is set (auth state listener may be async)
+    setTimeout(() => loadHistory(), 100);
 }
 function closeHistory() {
     const main = document.getElementById('mainView');
@@ -396,12 +447,21 @@ function clearAllExercises() {
 function loadHistory() {
     historyDocs = [];
     historyIndex = 0;
-    if (initPouch()) {
-        pouchDB.allDocs({ include_docs: true, descending: true }).then(res => {
-            historyDocs = res.rows.map(r => r.doc).sort((a,b) => (b.timestamp||0)-(a.timestamp||0));
-            renderHistory();
-        }).catch(err => { console.error('pouch allDocs err', err); loadLocalHistoryFallback(); });
+    // If Firestore is configured and user is signed in, load from Firestore
+    if (initFirebase() && firebaseDb && currentUser) {
+        console.log('Loading history from Firestore for uid:', currentUser.uid);
+        firebaseDb.collection('workouts')
+            .where('uid', '==', currentUser.uid)
+            .get()
+            .then(q => {
+                console.log('Got', q.docs.length, 'workouts from Firestore');
+                historyDocs = q.docs.map(d => (Object.assign({ _id: d.id }, d.data())));
+                // Sort by timestamp descending (most recent first)
+                historyDocs.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+                renderHistory();
+            }).catch(err => { console.error('firestore get err', err); alert('Error loading history: ' + err.message); loadLocalHistoryFallback(); });
     } else {
+        console.log('Firestore not ready or user not signed in. Using localStorage fallback.');
         loadLocalHistoryFallback();
     }
 }
@@ -521,6 +581,11 @@ function bindUI() {
         closeImportModal: (el) => el.addEventListener('click', closeImportModal),
         copyExport: (el) => el.addEventListener('click', copyExport),
         closeExportModal: (el) => el.addEventListener('click', closeExportModal),
+        openAuthModal: (el) => el.addEventListener('click', openAuthModal),
+        closeAuthModal: (el) => el.addEventListener('click', closeAuthModal),
+        loginWithEmail: (el) => el.addEventListener('click', loginWithEmail),
+        registerWithEmail: (el) => el.addEventListener('click', registerWithEmail),
+        signOutUser: (el) => el.addEventListener('click', signOutUser),
         editCurrentWorkout: (el) => el.addEventListener('click', editCurrentWorkout),
         closeHistory: (el) => el.addEventListener('click', closeHistory),
         historyNext: (el) => el.addEventListener('click', historyNext),
@@ -539,6 +604,9 @@ function bindUI() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    // initialize Firebase (if configured) before binding UI so auth button reflects state
+    try { initFirebase(); } catch (e) { /* ignore */ }
     bindUI();
+    updateAuthUI();
     loadData();
 });
